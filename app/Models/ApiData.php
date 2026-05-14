@@ -15,6 +15,7 @@ class ApiData extends Model
         'ip_address',
         'file_path',
         'url',
+        'status',
         'id_tabel',
         'tabel_name'
     ];

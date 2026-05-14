@@ -6,18 +6,17 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">API Keys Management</h3>
+                    <h3 class="card-title">User Management</h3>
                     <div class="card-tools d-flex align-items-center gap-2">
                         <div class="input-group input-group-sm" style="width: 250px;">
-                            <input type="text" id="searchInput" class="form-control" placeholder="Search API keys...">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Search users...">
                             <div class="input-group-append">
                                 <button type="button" class="btn btn-default" onclick="clearSearch()">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
                         </div>
-                        <a href="{{ route('api-management.create') }}" class="btn btn-primary btn-sm">Create New API Key</a>
-                        <a href="{{ route('data-api.index') }}" class="btn btn-info btn-sm">View Data</a>
+                        <a href="{{ route('user-management.create') }}" class="btn btn-primary btn-sm">Create New User</a>
                     </div>
                 </div>
                 <!-- /.card-header -->
@@ -27,39 +26,32 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Name</th>
-                                <th>API Key</th>
-                                <th>Status</th>
+                                <th>Email</th>
                                 <th>Created At</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody">
-                            @forelse($apiKeys as $key)
+                            @forelse($users as $user)
                             <tr>
-                                <td>{{ $key->id }}</td>
-                                <td>{{ $key->name }}</td>
-                                <td>{{ substr($key->api_key, 0, 10) }}...</td>
-                                <td>
-                                    <span class="badge bg-{{ $key->is_active ? 'success' : 'danger' }}">
-                                        {{ $key->is_active ? 'Active' : 'Inactive' }}
-                                    </span>
-                                </td>
-                                <td>{{ $key->created_at->format('Y-m-d H:i:s') }}</td>
+                                <td>{{ $user->id }}</td>
+                                <td>{{ $user->name }}</td>
+                                <td>{{ $user->email }}</td>
+                                <td>{{ $user->created_at->format('Y-m-d H:i:s') }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('api-management.show', $key->id) }}" class="btn btn-info btn-sm">View</a>
-                                        <a href="{{ route('api-management.edit', $key->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                                        <form action="{{ route('api-management.destroy', $key->id) }}" method="POST" class="d-inline">
+                                        <a href="{{ route('user-management.edit', $user->id) }}" class="btn btn-warning btn-sm">Edit</a>
+                                        <form action="{{ route('user-management.destroy', $user->id) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this API key?')">Delete</button>
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?')">Delete</button>
                                         </form>
                                     </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="text-center">No API keys found</td>
+                                <td colspan="5" class="text-center">No users found</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -67,7 +59,7 @@
                 </div>
                 <!-- /.card-body -->
                 <div class="card-footer clearfix">
-                    {{ $apiKeys->links() }}
+                    {{ $users->links() }}
                 </div>
             </div>
             <!-- /.card -->

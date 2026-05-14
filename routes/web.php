@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\ApiManagementController;
 use App\Http\Controllers\DataApiController;
+use App\Http\Controllers\UserManagementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,6 +23,16 @@ Route::get('/', function () {
 
 // Health check endpoint
 Route::get('/health', [ApiController::class, 'health']);
+
+// Rute untuk manajemen user
+Route::middleware(['auth'])->resource('user-management', UserManagementController::class)->names([
+    'index' => 'user-management.index',
+    'create' => 'user-management.create',
+    'store' => 'user-management.store',
+    'edit' => 'user-management.edit',
+    'update' => 'user-management.update',
+    'destroy' => 'user-management.destroy'
+]);
 
 // Rute untuk manajemen API key
 Route::middleware(['auth'])->resource('api-management', ApiManagementController::class)->names([

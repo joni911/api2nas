@@ -7,10 +7,20 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Uploaded Data Management</h3>
+                    <div class="card-tools d-flex align-items-center gap-2">
+                        <div class="input-group input-group-sm" style="width: 250px;">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Search data...">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-default" onclick="clearSearch()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body table-responsive p-0">
-                    <table class="table table-hover text-nowrap">
+                    <table class="table table-hover text-nowrap" id="dataTable">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -22,7 +32,7 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tableBody">
                             @forelse($apiDatas as $data)
                             <tr>
                                 <td>{{ $data->id }}</td>
@@ -61,4 +71,22 @@
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#tableBody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    const rows = document.querySelectorAll('#tableBody tr');
+    rows.forEach(row => row.style.display = '');
+}
+</script>
 @endsection

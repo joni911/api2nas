@@ -63,6 +63,12 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        if (User::where('email', $data['email'])->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => ['User with this email already exists. Registration is not allowed.'],
+            ]);
+        }
+
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],

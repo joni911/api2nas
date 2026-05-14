@@ -7,7 +7,30 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>@yield('title', config('app.name', 'Laravel')) - API Image Storage System</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="@yield('meta_description', 'Secure and reliable API image storage system for backup and public file access')">
+    <meta name="keywords" content="@yield('meta_keywords', 'api, image storage, backup, file upload, cloud storage')">
+    <meta name="author" content="@yield('meta_author', 'API2NAS')">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="@yield('og_title', config('app.name', 'Laravel')) - API Image Storage System">
+    <meta property="og:description" content="@yield('og_description', 'Secure and reliable API image storage system for backup and public file access')">
+    <meta property="og:image" content="@yield('og_image', asset('images/og-image.jpg'))">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:title" content="@yield('twitter_title', config('app.name', 'Laravel')) - API Image Storage System">
+    <meta property="twitter:description" content="@yield('twitter_description', 'Secure and reliable API image storage system for backup and public file access')">
+    <meta property="twitter:image" content="@yield('twitter_image', asset('images/og-image.jpg'))">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ url()->current() }}">
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
@@ -15,6 +38,8 @@
 
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    
+    @stack('seo')
 </head>
 <body>
     <div id="app">
@@ -31,6 +56,9 @@
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
                         @auth
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('user-management.index') }}">User Management</a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('api-management.index') }}">API Management</a>
                             </li>

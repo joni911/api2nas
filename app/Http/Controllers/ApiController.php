@@ -28,7 +28,7 @@ class ApiController extends Controller
             'id_tabel' => 'nullable|string|max:255',
             'tabel_name' => 'nullable|string|max:255',
             'apikey' => 'required|string|exists:api_keys,api_key',
-            'extension' => 'nullable|string|in:jpg,jpeg,png,gif,webp,pdf,txt,csv,json,doc,docx,xls,xlsx,ppt,pptx,zip,rar'
+            'extension' => 'nullable|string|in:jpg,jpeg,png,gif,webp,pdf,txt,csv,json,xml,html,doc,docx,xls,xlsx,ppt,pptx,zip,rar,7z,gz,tar,bz2,xz,sql,db,apk,jar,log,svg,bmp,tiff,ico,bin'
         ]);
 
         if ($validator->fails()) {
@@ -59,155 +59,30 @@ class ApiController extends Controller
         $mimeType = '';
 
         // Cek apakah base64 memiliki header data URI
-        if (preg_match('/^data:image\/(\w+);base64,/', $fileData, $matches)) {
-            // Ekstrak tipe dari header data URI
-            $imageType = $matches[1];
-            switch ($imageType) {
-                case 'jpeg':
-                case 'jpg':
-                    $extension = 'jpg';
-                    $mimeType = 'image/jpeg';
-                    break;
-                case 'png':
-                    $extension = 'png';
-                    $mimeType = 'image/png';
-                    break;
-                case 'gif':
-                    $extension = 'gif';
-                    $mimeType = 'image/gif';
-                    break;
-                case 'webp':
-                    $extension = 'webp';
-                    $mimeType = 'image/webp';
-                    break;
-                default:
-                    $extension = $imageType;
-                    $mimeType = 'image/' . $imageType;
-            }
-
+        if (preg_match('/^data:([\w\/\+]+);base64,/', $fileData, $matches)) {
+            $detectedMime = $matches[1];
+            $mimeType = $detectedMime;
+            
             // Hapus header dari data base64
-            $fileData = preg_replace('/^data:image\/\w+;base64,/', '', $fileData);
+            $fileData = preg_replace('/^data:[\w\/\+]+;base64,/', '', $fileData);
+            $fileContent = base64_decode($fileData);
+            
+            $extension = $this->getExtensionFromMime($detectedMime);
         } else {
             // Jika tidak ada header data URI, decode dan deteksi dari konten
             $fileContent = base64_decode($fileData);
             if ($fileContent !== false) {
+                // Deteksi menggunakan finfo
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mimeType = finfo_buffer($finfo, $fileContent);
                 finfo_close($finfo);
 
-                switch ($mimeType) {
-                    // Gambar
-                    case 'image/jpeg':
-                        $extension = 'jpg';
-                        break;
-                    case 'image/png':
-                        $extension = 'png';
-                        break;
-                    case 'image/gif':
-                        $extension = 'gif';
-                        break;
-                    case 'image/webp':
-                        $extension = 'webp';
-                        break;
-
-                    // Dokumen Office
-                    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                        $extension = 'docx';
-                        break;
-                    case 'application/msword':
-                        $extension = 'doc';
-                        break;
-                    case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                        $extension = 'xlsx';
-                        break;
-                    case 'application/vnd.ms-excel':
-                        $extension = 'xls';
-                        break;
-                    case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-                        $extension = 'pptx';
-                        break;
-                    case 'application/vnd.ms-powerpoint':
-                        $extension = 'ppt';
-                        break;
-
-                    // PDF dan teks
-                    case 'application/pdf':
-                        $extension = 'pdf';
-                        break;
-                    case 'text/plain':
-                        $extension = 'txt';
-                        break;
-                    case 'text/csv':
-                        $extension = 'csv';
-                        break;
-                    case 'application/json':
-                        $extension = 'json';
-                        break;
-                    case 'application/zip':
-                        $extension = 'zip';
-                        break;
-                    case 'application/x-rar-compressed':
-                        $extension = 'rar';
-                        break;
-                    default:
-                        // Coba deteksi dari magic bytes
-                        $binary = substr($fileContent, 0, 8);
-                        $hex = bin2hex($binary);
-
-                        // JPEG
-                        if (strpos($hex, 'ffd8ffe0') === 0 || strpos($hex, 'ffd8ffe1') === 0 || strpos($hex, 'ffd8ff') === 0) {
-                            $extension = 'jpg';
-                            $mimeType = 'image/jpeg';
-                        }
-                        // PNG
-                        elseif (strpos($hex, '89504e470d0a1a0a') === 0) {
-                            $extension = 'png';
-                            $mimeType = 'image/png';
-                        }
-                        // GIF
-                        elseif (strpos($hex, '474946383761') === 0 || strpos($hex, '474946383961') === 0) {
-                            $extension = 'gif';
-                            $mimeType = 'image/gif';
-                        }
-                        // PDF
-                        elseif (strpos($hex, '25504446') === 0) {
-                            $extension = 'pdf';
-                            $mimeType = 'application/pdf';
-                        }
-                        // DOCX/XLSX/PPTX (ZIP-based formats)
-                        elseif (strpos($hex, '504b0304') === 0) {
-                            // Ini adalah file ZIP-based, bisa jadi DOCX/XLSX/PPTX
-                            // Kita perlu cek lebih lanjut dengan membaca konten
-                            $tempFilePath = storage_path('app/temp_' . Str::random(10) . '.tmp');
-                            file_put_contents($tempFilePath, $fileContent);
-
-                            $zip = new \ZipArchive();
-                            if ($zip->open($tempFilePath) === TRUE) {
-                                $contentType = $zip->getFromName('[Content_Types].xml');
-                                if ($contentType !== false) {
-                                    if (strpos($contentType, 'wordprocessingml.document.main+xml') !== false) {
-                                        $extension = 'docx';
-                                        $mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-                                    } elseif (strpos($contentType, 'spreadsheetml.sheet.main+xml') !== false) {
-                                        $extension = 'xlsx';
-                                        $mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-                                    } elseif (strpos($contentType, 'presentationml.presentation.main+xml') !== false) {
-                                        $extension = 'pptx';
-                                        $mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-                                    }
-                                }
-                                $zip->close();
-                            }
-
-                            // Hapus file sementara
-                            unlink($tempFilePath);
-                        }
-                        // DOC (older format)
-                        elseif (strpos($hex, 'd0cf11e0a1b11ae1') === 0) {
-                            $extension = 'doc';
-                            $mimeType = 'application/msword';
-                        }
-                        break;
+                // Deteksi berdasarkan MIME type
+                $extension = $this->getExtensionFromMime($mimeType);
+                
+                // Jika masih bin atau txt, coba deteksi lebih lanjut
+                if ($extension === 'bin' || $extension === 'txt') {
+                    $extension = $this->detectExtensionFromContent($fileContent, $mimeType);
                 }
             }
         }
@@ -218,7 +93,10 @@ class ApiController extends Controller
         // Buat nama file yang aman
         $safeFileName = preg_replace('/[^A-Za-z0-9_.-]/', '_', $request->nama_sistem);
         $fileName = $safeFileName . '_' . time() . '_' . Str::random(10) . '.' . $extension;
-        $filePath = 'uploads/' . date('Y/m');
+        
+        // Struktur folder baru: api_name/year/month
+        $apiKeyName = preg_replace('/[^A-Za-z0-9_.-]/', '_', $apiKey->name);
+        $filePath = $apiKeyName . '/' . date('Y/m');
 
         // Buat direktori jika belum ada
         if (!Storage::disk('public')->exists($filePath)) {
@@ -243,6 +121,7 @@ class ApiController extends Controller
             'ip_address' => $request->ip(),
             'file_path' => $fullPath,
             'url' => $publicUrl,
+            'status' => 'uploaded',
             'id_tabel' => $request->filled('id_tabel') ? $request->id_tabel : null,
             'tabel_name' => $request->filled('tabel_name') ? $request->tabel_name : null
         ]);
@@ -275,5 +154,244 @@ class ApiController extends Controller
             'tabel_name' => $apiData->tabel_name,
             'created_at' => $apiData->created_at
         ]);
+    }
+
+    private function getExtensionFromMime($mimeType)
+    {
+        $mimeMap = [
+            // Images
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            'image/svg+xml' => 'svg',
+            'image/bmp' => 'bmp',
+            'image/tiff' => 'tiff',
+            'image/x-icon' => 'ico',
+            
+            // Documents
+            'application/pdf' => 'pdf',
+            'application/msword' => 'doc',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'application/vnd.ms-excel' => 'xls',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+            'application/vnd.ms-powerpoint' => 'ppt',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
+            'text/plain' => 'txt',
+            'text/csv' => 'csv',
+            'text/html' => 'html',
+            'text/xml' => 'xml',
+            'application/json' => 'json',
+            'application/xml' => 'xml',
+            
+            // Archives
+            'application/zip' => 'zip',
+            'application/x-rar-compressed' => 'rar',
+            'application/x-7z-compressed' => '7z',
+            'application/gzip' => 'gz',
+            'application/x-gzip' => 'gz',
+            'application/x-tar' => 'tar',
+            'application/x-bzip2' => 'bz2',
+            'application/x-xz' => 'xz',
+            
+            // Database
+            'application/sql' => 'sql',
+            'text/x-sql' => 'sql',
+        ];
+
+        return $mimeMap[$mimeType] ?? 'bin';
+    }
+
+    private function detectExtensionFromContent($fileContent, $mimeType)
+    {
+        if (empty($fileContent)) {
+            return 'bin';
+        }
+
+        $binary = substr($fileContent, 0, 16);
+        $hex = bin2hex($binary);
+
+        // Magic bytes detection
+        // Images
+        if (str_starts_with($hex, 'ffd8ff')) {
+            return 'jpg';
+        }
+        if (str_starts_with($hex, '89504e470d0a1a0a')) {
+            return 'png';
+        }
+        if (str_starts_with($hex, '47494638')) {
+            return 'gif';
+        }
+        if (str_starts_with($hex, '52494646') && strpos($fileContent, 'WEBP') !== false) {
+            return 'webp';
+        }
+        if (str_starts_with($hex, '424d')) {
+            return 'bmp';
+        }
+        if (str_starts_with($hex, '49492a00') || str_starts_with($hex, '4d4d002a')) {
+            return 'tiff';
+        }
+        
+        // PDF
+        if (str_starts_with($hex, '25504446')) {
+            return 'pdf';
+        }
+        
+        // Archives
+        // ZIP (also covers DOCX, XLSX, PPTX, JAR, APK, etc.)
+        if (str_starts_with($hex, '504b0304') || str_starts_with($hex, '504b0506') || str_starts_with($hex, '504b0708')) {
+            // Check if it's a specific ZIP-based format
+            $tempFilePath = storage_path('app/temp_' . Str::random(10) . '.tmp');
+            file_put_contents($tempFilePath, $fileContent);
+
+            $zip = new \ZipArchive();
+            if ($zip->open($tempFilePath) === TRUE) {
+                // Check for Office documents
+                $contentType = $zip->getFromName('[Content_Types].xml');
+                if ($contentType !== false) {
+                    if (strpos($contentType, 'wordprocessingml') !== false) {
+                        $zip->close();
+                        unlink($tempFilePath);
+                        return 'docx';
+                    }
+                    if (strpos($contentType, 'spreadsheetml') !== false) {
+                        $zip->close();
+                        unlink($tempFilePath);
+                        return 'xlsx';
+                    }
+                    if (strpos($contentType, 'presentationml') !== false) {
+                        $zip->close();
+                        unlink($tempFilePath);
+                        return 'pptx';
+                    }
+                }
+                
+                // Check for APK
+                if ($zip->getFromName('AndroidManifest.xml') !== false) {
+                    $zip->close();
+                    unlink($tempFilePath);
+                    return 'apk';
+                }
+                
+                // Check for JAR
+                if ($zip->getFromName('META-INF/MANIFEST.MF') !== false) {
+                    $zip->close();
+                    unlink($tempFilePath);
+                    return 'jar';
+                }
+                
+                $zip->close();
+            }
+            
+            // Hapus file sementara
+            if (file_exists($tempFilePath)) {
+                unlink($tempFilePath);
+            }
+            
+            return 'zip';
+        }
+        
+        // RAR (old format)
+        if (str_starts_with($hex, '526172211a0700')) {
+            return 'rar';
+        }
+        // RAR (new format)
+        if (str_starts_with($hex, '526172211a070100')) {
+            return 'rar';
+        }
+        
+        // 7z
+        if (str_starts_with($hex, '377abcaf271c')) {
+            return '7z';
+        }
+        
+        // GZIP
+        if (str_starts_with($hex, '1f8b')) {
+            return 'gz';
+        }
+        
+        // BZ2
+        if (str_starts_with($hex, '425a68')) {
+            return 'bz2';
+        }
+        
+        // XZ
+        if (str_starts_with($hex, 'fd377a585a00')) {
+            return 'xz';
+        }
+        
+        // TAR (ustar at offset 257)
+        if (strlen($fileContent) > 263) {
+            $ustar = substr($fileContent, 257, 5);
+            if ($ustar === 'ustar') {
+                return 'tar';
+            }
+        }
+        
+        // Old Office formats (OLE2)
+        if (str_starts_with($hex, 'd0cf11e0a1b11ae1')) {
+            // Could be DOC, XLS, PPT, MSG, etc.
+            // Default to doc for OLE2
+            return 'doc';
+        }
+        
+        // SQLite database
+        if (str_starts_with($fileContent, 'SQLite format 3')) {
+            return 'db';
+        }
+        
+        // Text-based detection
+        if ($mimeType === 'text/plain' || $mimeType === 'application/octet-stream' || $mimeType === '') {
+            $textContent = substr($fileContent, 0, 1000);
+            
+            // SQL detection
+            $sqlPatterns = [
+                '/^--\s/m',
+                '/^CREATE\s+(TABLE|DATABASE|INDEX|VIEW|PROCEDURE|FUNCTION|TRIGGER)/im',
+                '/^INSERT\s+INTO/im',
+                '/^DROP\s+(TABLE|DATABASE|INDEX|VIEW)/im',
+                '/^ALTER\s+TABLE/im',
+                '/^USE\s+\w+/im',
+                '/^SET\s+\w+/im',
+                '/^LOCK\s+TABLES/im',
+                '/^UNLOCK\s+TABLES/im',
+                '/^DELIMITER/im',
+                '/^\/\*!(\d+)/m',
+            ];
+            
+            foreach ($sqlPatterns as $pattern) {
+                if (preg_match($pattern, $textContent)) {
+                    return 'sql';
+                }
+            }
+            
+            // XML detection
+            if (preg_match('/^<\?xml\s+version/im', $textContent) || preg_match('/^<[a-zA-Z][\w:.-]*>/m', $textContent)) {
+                return 'xml';
+            }
+            
+            // HTML detection
+            if (preg_match('/<!DOCTYPE\s+html/im', $textContent) || preg_match('/<html[\s>]/im', $textContent)) {
+                return 'html';
+            }
+            
+            // CSV detection
+            if (preg_match('/^"[^"]*"(,[^,]*)*$/m', $textContent) || preg_match('/^[\w\s]+(,[\w\s]+)+$/m', $textContent)) {
+                return 'csv';
+            }
+            
+            // JSON detection
+            $decoded = json_decode($textContent, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return 'json';
+            }
+            
+            // Log files
+            if (preg_match('/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}/m', $textContent)) {
+                return 'log';
+            }
+        }
+        
+        return 'bin';
     }
 }

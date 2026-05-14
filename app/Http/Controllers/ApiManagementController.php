@@ -50,8 +50,9 @@ class ApiManagementController extends Controller
      */
     public function show($id)
     {
-        $apiKey = ApiKey::where('user_id', Auth::id())->findOrFail($id);
-        return view('api-management.show', compact('apiKey'));
+        $apiKey = ApiKey::where('user_id', Auth::id())->withCount('apiData')->findOrFail($id);
+        $apiData = $apiKey->apiData()->paginate(10);
+        return view('api-management.show', compact('apiKey', 'apiData'));
     }
 
     /**

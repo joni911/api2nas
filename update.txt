@@ -1,0 +1,5 @@
+1 ketika sudah ada user maka registrasi user tidak bisa di lakukan
+2 untuk menu api management tambahkan menu lihat data untuk mengecek data data yang di upload keapi ini
+gunakan ui dengan js yang bisa di gunakan mencari dan ringan
+3. untuk struktur folder baru adalah nama api tahun bulan untuk file yang di upload
+4. ada menu management user yang bisa membuat user baru 
