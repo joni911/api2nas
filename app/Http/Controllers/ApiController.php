@@ -44,6 +44,13 @@ class ApiController extends Controller
         // Decode base64 file
         $fileData = $request->file;
 
+        // Deteksi dan strip header data URI jika ada, sebelum validasi base64
+        $detectedMime = null;
+        if (preg_match('/^data:([\w\/\+]+);base64,/', $fileData, $matches)) {
+            $detectedMime = $matches[1];
+            $fileData = preg_replace('/^data:[\w\/\+]+;base64,/', '', $fileData);
+        }
+
         // Cek apakah string adalah base64 valid
         if (!preg_match('%^[a-zA-Z0-9/+]*={0,2}$%', $fileData)) {
             return response()->json(['error' => 'Invalid base64 format'], 400);
@@ -54,36 +61,25 @@ class ApiController extends Controller
             return response()->json(['error' => 'Invalid base64 file'], 400);
         }
 
-        // Deteksi tipe file dari header base64 jika ada
+        // Deteksi tipe file dari header data URI atau dari konten
         $extension = 'bin'; // default extension
         $mimeType = '';
 
-        // Cek apakah base64 memiliki header data URI
-        if (preg_match('/^data:([\w\/\+]+);base64,/', $fileData, $matches)) {
-            $detectedMime = $matches[1];
+        if ($detectedMime !== null) {
             $mimeType = $detectedMime;
-            
-            // Hapus header dari data base64
-            $fileData = preg_replace('/^data:[\w\/\+]+;base64,/', '', $fileData);
-            $fileContent = base64_decode($fileData);
-            
             $extension = $this->getExtensionFromMime($detectedMime);
         } else {
-            // Jika tidak ada header data URI, decode dan deteksi dari konten
-            $fileContent = base64_decode($fileData);
-            if ($fileContent !== false) {
-                // Deteksi menggunakan finfo
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $mimeType = finfo_buffer($finfo, $fileContent);
-                finfo_close($finfo);
+            // Deteksi menggunakan finfo
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_buffer($finfo, $fileContent);
+            finfo_close($finfo);
 
-                // Deteksi berdasarkan MIME type
-                $extension = $this->getExtensionFromMime($mimeType);
-                
-                // Jika masih bin atau txt, coba deteksi lebih lanjut
-                if ($extension === 'bin' || $extension === 'txt') {
-                    $extension = $this->detectExtensionFromContent($fileContent, $mimeType);
-                }
+            // Deteksi berdasarkan MIME type
+            $extension = $this->getExtensionFromMime($mimeType);
+
+            // Jika masih bin atau txt, coba deteksi lebih lanjut
+            if ($extension === 'bin' || $extension === 'txt') {
+                $extension = $this->detectExtensionFromContent($fileContent, $mimeType);
             }
         }
 
