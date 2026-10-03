@@ -77,7 +77,7 @@ class ApiManagementController extends Controller
         $apiKey = ApiKey::where('user_id', Auth::id())->findOrFail($id);
         $apiKey->update([
             'name' => $request->name,
-            'is_active' => $request->has('is_active') ? $request->is_active : $apiKey->is_active
+            'is_active' => $request->boolean('is_active')
         ]);
 
         return redirect()->route('api-management.index')->with('success', 'API Key updated successfully');

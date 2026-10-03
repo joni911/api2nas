@@ -39,6 +39,38 @@ Sistem API untuk menyimpan file (terutama gambar) sebagai backup dan menyediakan
 - created_at (timestamp)
 - updated_at (timestamp)
 
+## Akun Admin & Registrasi
+
+Fitur **registrasi publik dimatikan**. Akun hanya dapat dibuat oleh admin melalui
+halaman **User Management**, atau lewat seeder untuk akun pertama.
+
+Buat akun admin awal:
+
+```bash
+php artisan db:seed
+```
+
+Kredensial diambil dari `.env` (lihat `.env.example`):
+
+```
+ADMIN_NAME=Administrator
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=password
+```
+
+> ⚠️ Ganti `ADMIN_PASSWORD` sebelum deploy ke produksi.
+
+## Frontend / Aset
+
+Proyek memakai **Bootstrap 5** (via `resources/sass/app.scss`) dan **Vite**.
+Aset hasil build disimpan di `public/build` dan **ikut di-commit** agar UI langsung
+tampil saat deploy tanpa Node.
+
+- Mode development: `npm run dev`
+- Build produksi: `npm run build`
+
+Jika mengubah SCSS/JS, jalankan `npm run build` lalu commit ulang folder `public/build`.
+
 ## Instalasi
 
 1. Clone repository ini
@@ -46,9 +78,9 @@ Sistem API untuk menyimpan file (terutama gambar) sebagai backup dan menyediakan
 3. Salin `.env.example` ke `.env` dan sesuaikan konfigurasi
 4. Jalankan `php artisan key:generate`
 5. Jalankan migrasi database: `php artisan migrate`
-6. Jalankan `npm install` dan `npm run dev` untuk asset
-7. Akses halaman registrasi/login untuk membuat akun
-8. Gunakan halaman management API untuk membuat API key
+6. Jalankan `npm install` dan `npm run build` untuk asset produksi (atau `npm run dev` saat development)
+8. (Opsional) Jalankan `php artisan db:seed` untuk membuat akun admin awal
+9. Login dengan `ADMIN_EMAIL` / `ADMIN_PASSWORD` dari `.env`
 
 ## Penggunaan API
 

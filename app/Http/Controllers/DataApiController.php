@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ApiData;
+use App\Models\ApiKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,15 +16,18 @@ class DataApiController extends Controller
     {
         // Menampilkan daftar data upload milik user yang login
         $user = Auth::user();
+        $apiKeys = collect();
         if (!$user) {
             $apiDatas = collect();
         } else {
             $apiDatas = ApiData::whereHas('apiKey', function($query) {
                 $query->where('user_id', Auth::id());
             })->with('apiKey')->paginate(10);
+
+            $apiKeys = ApiKey::where('user_id', Auth::id())->orderBy('name')->get();
         }
 
-        return view('data-api.index', compact('apiDatas'));
+        return view('data-api.index', compact('apiDatas', 'apiKeys'));
     }
 
     /**

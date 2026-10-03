@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\AdminUserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -16,37 +18,21 @@ class AuthenticationTest extends TestCase
         $this->get('/login')->assertOk();
     }
 
-    public function test_register_page_is_accessible(): void
+    public function test_registration_routes_are_disabled(): void
     {
-        $this->get('/register')->assertOk();
-    }
+        $this->assertFalse(Route::has('register'));
 
-    public function test_a_guest_can_register(): void
-    {
-        $response = $this->post('/register', [
-            'name' => 'New User',
-            'email' => 'new@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ]);
-
-        $response->assertRedirect('/home');
-        $this->assertAuthenticated();
-        $this->assertDatabaseHas('users', ['email' => 'new@example.com']);
-    }
-
-    public function test_registration_fails_with_duplicate_email(): void
-    {
-        User::factory()->create(['email' => 'dup@example.com']);
+        $this->get('/register')->assertNotFound();
 
         $this->post('/register', [
-            'name' => 'Dup',
-            'email' => 'dup@example.com',
+            'name' => 'Hacker',
+            'email' => 'hacker@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-        ])->assertSessionHasErrors('email');
+        ])->assertNotFound();
 
-        $this->assertDatabaseCount('users', 1);
+        $this->assertDatabaseCount('users', 0);
+        $this->assertGuest();
     }
 
     public function test_a_user_can_login_with_valid_credentials(): void
@@ -90,7 +76,7 @@ class AuthenticationTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get('/home')
             ->assertOk()
-            ->assertSee('You are logged in!');
+            ->assertSee('Dashboard');
     }
 
     public function test_a_user_can_logout(): void
@@ -100,5 +86,28 @@ class AuthenticationTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
+    }
+
+    public function test_admin_user_seeder_creates_the_default_admin(): void
+    {
+        $this->seed(AdminUserSeeder::class);
+
+        $email = env('ADMIN_EMAIL', 'admin@example.com');
+        $password = env('ADMIN_PASSWORD', 'password');
+
+        $admin = User::where('email', $email)->first();
+        $this->assertNotNull($admin);
+        $this->assertTrue(Hash::check($password, $admin->password));
+
+        $this->post('/login', ['email' => $email, 'password' => $password]);
+        $this->assertAuthenticatedAs($admin);
+    }
+
+    public function test_admin_user_seeder_is_idempotent(): void
+    {
+        $this->seed(AdminUserSeeder::class);
+        $this->seed(AdminUserSeeder::class);
+
+        $this->assertDatabaseCount('users', 1);
     }
 }

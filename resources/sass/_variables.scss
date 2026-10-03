@@ -1,7 +1,29 @@
 // Body
-$body-bg: #f8fafc;
+$body-bg: #f6f7f9;
+$body-color: #16181d;
 
 // Typography
-$font-family-sans-serif: 'Nunito', sans-serif;
-$font-size-base: 0.9rem;
+$font-family-sans-serif: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+$font-size-base: 0.9375rem;
 $line-height-base: 1.6;
+
+// Brand palette (Linear-inspired indigo)
+$primary: #5e6ad2;
+$secondary: #6b7280;
+$success: #10b981;
+$info: #3b82f6;
+$warning: #f59e0b;
+$danger: #ef4444;
+$dark: #0f1011;
+$light: #f6f7f9;
+
+// Shape & depth
+$border-radius: 0.625rem;
+$border-radius-sm: 0.5rem;
+$border-radius-lg: 0.875rem;
+$border-radius-xl: 1.25rem;
+$border-color: #e6e8ec;
+
+// Fonts / emphasis
+$headings-font-weight: 600;
+$enable-negative-margins: true;

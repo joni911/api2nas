@@ -52,6 +52,7 @@ Route::middleware(['auth'])->resource('data-api', DataApiController::class)->nam
     'destroy' => 'data-api.destroy'
 ]);
 
-Auth::routes();
+// Registrasi publik dimatikan. Akun hanya bisa dibuat oleh admin melalui User Management.
+Auth::routes(['register' => false]);
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

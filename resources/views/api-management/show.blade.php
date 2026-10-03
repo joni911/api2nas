@@ -1,110 +1,91 @@
 @extends('layouts.app')
 
+@section('title', 'Detail API Key')
+@section('page_title', 'Detail API Key')
+@section('page_sub', $apiKey->name)
+
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="card-title">API Key Details</h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <p><strong>ID:</strong> {{ $apiKey->id }}</p>
-                            <p><strong>Name:</strong> {{ $apiKey->name }}</p>
-                            <p><strong>API Key:</strong> <code>{{ $apiKey->api_key }}</code></p>
-                            <p><strong>Status:</strong> 
-                                <span class="badge bg-{{ $apiKey->is_active ? 'success' : 'danger' }}">
-                                    {{ $apiKey->is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                            </p>
-                            <p><strong>Total Files:</strong> {{ $apiKey->api_data_count }}</p>
-                            <p><strong>Created At:</strong> {{ $apiKey->created_at->format('Y-m-d H:i:s') }}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <a href="{{ route('api-management.index') }}" class="btn btn-default">Back to List</a>
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="app-card h-100 reveal">
+            <div class="app-card-header">
+                <h2 class="app-card-title">Informasi</h2>
+                <span class="pill {{ $apiKey->is_active ? 'pill-success' : 'pill-danger' }}">
+                    <span class="pill-dot"></span>{{ $apiKey->is_active ? 'Aktif' : 'Nonaktif' }}
+                </span>
+            </div>
+            <div class="app-card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-5 text-muted fw-normal">ID</dt>
+                    <dd class="col-7 cell-mono">#{{ $apiKey->id }}</dd>
+                    <dt class="col-5 text-muted fw-normal">Nama</dt>
+                    <dd class="col-7 cell-strong">{{ $apiKey->name }}</dd>
+                    <dt class="col-5 text-muted fw-normal">Total File</dt>
+                    <dd class="col-7">{{ $apiKey->api_data_count }}</dd>
+                    <dt class="col-5 text-muted fw-normal">Dibuat</dt>
+                    <dd class="col-7 cell-mono">{{ $apiKey->created_at->format('d M Y H:i') }}</dd>
+                </dl>
+
+                <div class="mt-3">
+                    <label class="form-label">API Key</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control cell-mono" value="{{ $apiKey->api_key }}" readonly>
+                        <button class="btn btn-outline-secondary" type="button" data-copy="{{ $apiKey->api_key }}">Salin</button>
                     </div>
                 </div>
             </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Uploaded Files for this API Key</h3>
-                    <div class="card-tools d-flex align-items-center gap-2">
-                        <div class="input-group input-group-sm" style="width: 250px;">
-                            <input type="text" id="searchInput" class="form-control" placeholder="Search files...">
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-default" onclick="clearSearch()">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-hover text-nowrap" id="dataTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>File Name</th>
-                                <th>URL</th>
-                                <th>IP Address</th>
-                                <th>Table Name</th>
-                                <th>Table ID</th>
-                                <th>Created At</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            @forelse($apiData as $data)
-                            <tr>
-                                <td>{{ $data->id }}</td>
-                                <td>{{ $data->nama_file }}</td>
-                                <td>
-                                    <a href="{{ $data->url }}" target="_blank" class="text-primary">View</a>
-                                </td>
-                                <td>{{ $data->ip_address }}</td>
-                                <td>{{ $data->tabel_name ?? '-' }}</td>
-                                <td>{{ $data->id_tabel ?? '-' }}</td>
-                                <td>{{ $data->created_at->format('Y-m-d H:i:s') }}</td>
-                                <td>
-                                    <a href="{{ $data->url }}" target="_blank" class="btn btn-info btn-sm">View File</a>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="8" class="text-center">No files uploaded for this API key</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="card-footer clearfix">
-                    {{ $apiData->links() }}
-                </div>
+            <div class="app-card-foot d-flex gap-2">
+                <a href="{{ route('api-management.index') }}" class="btn btn-outline-secondary btn-sm">← Kembali</a>
+                <a href="{{ route('api-management.edit', $apiKey->id) }}" class="btn btn-primary btn-sm">Edit</a>
             </div>
         </div>
     </div>
+
+    <div class="col-lg-7">
+        <div class="app-card h-100 reveal">
+            <div class="app-card-header">
+                <h2 class="app-card-title">File dari API Key ini</h2>
+            </div>
+            <div class="app-table-wrap">
+                <table class="app-table" id="apiFileTable">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>IP</th>
+                            <th>Waktu</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($apiData as $data)
+                            <tr>
+                                <td class="cell-strong text-truncate" style="max-width:200px;">{{ $data->nama_file }}</td>
+                                <td class="cell-mono">{{ $data->ip_address }}</td>
+                                <td class="cell-mono">{{ $data->created_at->format('d M Y H:i') }}</td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <a href="{{ $data->url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">Buka</a>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="{{ $data->url }}">Salin URL</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                                        <div>Belum ada file untuk API key ini.</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($apiData->hasPages())
+                <div class="app-card-foot">{{ $apiData->links() }}</div>
+            @endif
+        </div>
+    </div>
 </div>
-
-<script>
-document.getElementById('searchInput').addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const rows = document.querySelectorAll('#tableBody tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
-    });
-});
-
-function clearSearch() {
-    document.getElementById('searchInput').value = '';
-    const rows = document.querySelectorAll('#tableBody tr');
-    rows.forEach(row => row.style.display = '');
-}
-</script>
 @endsection
