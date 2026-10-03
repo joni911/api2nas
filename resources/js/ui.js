@@ -1,7 +1,7 @@
 import * as bootstrap from 'bootstrap';
 
 /**
- * AppUI — vanilla JS interactivity for the admin shell.
+ * AppUI — vanilla JS interactivity for the Windows 11 Explorer shell.
  * Progressive enhancement: every feature no-ops when its element is absent.
  */
 const AppUI = (() => {
@@ -13,7 +13,7 @@ const AppUI = (() => {
         const wrap = $('#appToastContainer');
         if (!wrap) return;
         const el = document.createElement('div');
-        el.className = `app-toast ${variant}`;
+        el.className = `win-toast ${variant}`;
         el.setAttribute('role', 'status');
         const dot = document.createElement('span');
         dot.className = 'dot';
@@ -33,39 +33,31 @@ const AppUI = (() => {
     }
 
     function initFlashToasts() {
-        $$('#appToastContainer .app-toast[data-autodismiss]').forEach((el) => {
+        $$('#appToastContainer .win-toast[data-autodismiss]').forEach((el) => {
             el.removeAttribute('data-autodismiss');
             autoDismiss(el);
         });
-        $$('[data-flash-toast]').forEach((el) => {
-            // optional hook for server-rendered toast triggers
-            void el;
-        });
     }
 
-    function initSidebar() {
-        const sidebar = $('#appSidebar');
-        const overlay = $('#appOverlay');
-        const toggle = $('#sidebarToggle');
-        if (!sidebar || !toggle) return;
+    function initNav() {
+        const nav = $('#winNav');
+        const overlay = $('#winOverlay');
+        const toggle = $('#navToggle');
+        if (!nav || !toggle) return;
 
         const open = () => {
-            sidebar.classList.add('open');
+            nav.classList.add('open');
             overlay?.classList.add('show');
-            document.body.style.overflow = 'hidden';
         };
         const close = () => {
-            sidebar.classList.remove('open');
+            nav.classList.remove('open');
             overlay?.classList.remove('show');
-            document.body.style.overflow = '';
         };
 
-        toggle.addEventListener('click', () =>
-            sidebar.classList.contains('open') ? close() : open()
-        );
+        toggle.addEventListener('click', () => (nav.classList.contains('open') ? close() : open()));
         overlay?.addEventListener('click', close);
         document.addEventListener('keydown', (e) => e.key === 'Escape' && close());
-        $$('.app-nav-link', sidebar).forEach((a) => a.addEventListener('click', close));
+        $$('.win-navitem', nav).forEach((a) => a.addEventListener('click', close));
         window.addEventListener('resize', () => window.innerWidth > 991.98 && close());
     }
 
@@ -95,13 +87,43 @@ const AppUI = (() => {
         sync();
     }
 
+    function initViewToggle() {
+        const wrap = $('.win-listwrap');
+        const btns = $$('[data-view-toggle]');
+        if (!wrap || !btns.length) return;
+        btns.forEach((btn) =>
+            btn.addEventListener('click', () => {
+                wrap.classList.toggle('view-tiles');
+                btns.forEach((b) => b.classList.toggle('active', wrap.classList.contains('view-tiles')));
+            })
+        );
+    }
+
+    function initRefresh() {
+        $$('[data-refresh]').forEach((btn) =>
+            btn.addEventListener('click', () => window.location.reload())
+        );
+    }
+
+    function initRowSelect() {
+        const rows = $$('.win-list tbody tr').filter((r) => !r.dataset.emptyRow);
+        rows.forEach((row) =>
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('a, button, input, select, form, label')) return;
+                const multi = e.ctrlKey || e.metaKey;
+                if (!multi) rows.forEach((r) => r.classList.remove('selected'));
+                row.classList.toggle('selected');
+            })
+        );
+    }
+
     function initTableSearch() {
         $$('[data-table-search]').forEach((input) => {
             const target = $(input.dataset.tableSearch);
             if (!target) return;
             const rows = $$('tr', target).filter((r) => !r.dataset.emptyRow);
-            const empty = $('[data-search-empty]', target.closest('.app-card') || document);
-            const counter = $('[data-search-count]', input.closest('.app-card') || document);
+            const card = input.closest('.win-content') || document;
+            const empty = $('[data-search-empty]', card);
 
             const run = () => {
                 const q = input.value.trim().toLowerCase();
@@ -112,16 +134,32 @@ const AppUI = (() => {
                     if (match) visible++;
                 });
                 if (empty) empty.hidden = visible !== 0;
-                if (counter) counter.textContent = String(visible);
+                document.dispatchEvent(new CustomEvent('app:filtered', { detail: visible }));
             };
             input.addEventListener('input', run);
-            const clear = $('[data-search-clear]', input.closest('.input-group') || document);
+            const clear = $('[data-search-clear]', input.closest('.win-search') || document);
             clear?.addEventListener('click', () => {
                 input.value = '';
                 run();
                 input.focus();
             });
             run();
+        });
+    }
+
+    function initTableFilter() {
+        $$('[data-table-filter]').forEach((sel) => {
+            const tbody = $(sel.dataset.tableFilter);
+            if (!tbody) return;
+            sel.addEventListener('change', () => {
+                const val = sel.value;
+                $$('tr', tbody).forEach((row) => {
+                    if (row.dataset.emptyRow) return;
+                    if (val) {
+                        row.hidden = row.dataset.filterValue !== val;
+                    }
+                });
+            });
         });
     }
 
@@ -150,8 +188,7 @@ const AppUI = (() => {
     function initCopy() {
         $$('[data-copy]').forEach((btn) =>
             btn.addEventListener('click', async () => {
-                const value = btn.dataset.copy;
-                const ok = await copyText(value);
+                const ok = await copyText(btn.dataset.copy);
                 toast(ok ? 'Berhasil disalin ke clipboard' : 'Gagal menyalin', ok ? 'success' : 'danger');
             })
         );
@@ -192,21 +229,6 @@ const AppUI = (() => {
         });
     }
 
-    function initTableFilter() {
-        $$('[data-table-filter]').forEach((sel) => {
-            const tbody = $(sel.dataset.tableFilter);
-            if (!tbody) return;
-            sel.addEventListener('change', () => {
-                const val = sel.value;
-                $$('tr', tbody).forEach((row) => {
-                    if (row.dataset.emptyRow) return;
-                    const ok = !val || row.dataset.filterValue === val;
-                    row.hidden = !ok;
-                });
-            });
-        });
-    }
-
     function initPasswordToggle() {
         $$('[data-toggle-password]').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -241,7 +263,7 @@ const AppUI = (() => {
         $$('[data-count]').forEach((el) => {
             const target = Number(el.dataset.count || 0);
             if (!Number.isFinite(target) || target <= 0) return;
-            const duration = 900;
+            const duration = 800;
             const start = performance.now();
             const step = (now) => {
                 const p = Math.min((now - start) / duration, 1);
@@ -269,18 +291,21 @@ const AppUI = (() => {
                     }
                 });
             },
-            { threshold: 0.12 }
+            { threshold: 0.1 }
         );
         items.forEach((el, i) => {
-            el.style.animationDelay = `${Math.min(i * 40, 240)}ms`;
+            el.style.animationDelay = `${Math.min(i * 35, 210)}ms`;
             io.observe(el);
         });
     }
 
     function boot() {
-        initSidebar();
+        initNav();
         initTheme();
         initFlashToasts();
+        initViewToggle();
+        initRefresh();
+        initRowSelect();
         initTableSearch();
         initTableFilter();
         initCopy();
