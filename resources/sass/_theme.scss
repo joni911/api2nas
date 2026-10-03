@@ -80,6 +80,10 @@ body {
 a { color: var(--win-accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .min-w-0 { min-width: 0; }
+.text-win-muted { color: var(--win-muted) !important; }
+.bg-win-layer { background: var(--win-layer); }
+.bg-win-card { background: var(--win-card); }
+.border-win { border-color: var(--win-border) !important; }
 
 // --- Window shell -----------------------------------------------------------
 .win-shell {
@@ -550,3 +554,30 @@ a:hover { text-decoration: underline; }
 .app-card-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--win-border); }
 .app-card-title { font-size: 0.9375rem; font-weight: 600; margin: 0; }
 .app-card-foot { padding: 0.75rem 1.25rem; border-top: 1px solid var(--win-border); }
+
+// --- Landing page -----------------------------------------------------------
+.landing-hero { background: var(--win-layer); border-bottom: 1px solid var(--win-border); }
+.landing-section { background: var(--win-bg); }
+.landing-section.alt { background: var(--win-layer); border-top: 1px solid var(--win-border); border-bottom: 1px solid var(--win-border); }
+.landing-footer { border-top: 1px solid var(--win-border); color: var(--win-muted); }
+.landing-eyebrow {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0.25rem 0.625rem; border: 1px solid var(--win-border);
+  border-radius: 9999px; background: var(--win-selected); color: var(--win-accent);
+  font-size: 0.75rem; font-weight: 600;
+}
+.landing-title { font-size: clamp(1.75rem, 1.2rem + 2.4vw, 3rem); line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; }
+.terminal { border: 1px solid var(--win-border); border-radius: var(--win-radius); overflow: hidden; background: #0c0c0c; box-shadow: var(--win-shadow); }
+.terminal-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.5rem 0.75rem; background: #1a1a1a; color: #cfcfcf; font-size: 0.75rem; font-family: 'Cascadia Code', ui-monospace, Menlo, monospace; }
+.terminal-bar .dots { display: inline-flex; gap: 0.375rem; }
+.terminal-bar .dots i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #3a3a3a; }
+.terminal pre { margin: 0; padding: 1rem; color: #e6e6e6; font-family: 'Cascadia Code', ui-monospace, Menlo, monospace; font-size: 0.78rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.terminal .tok-get { color: #6ee7b7; }
+.terminal .tok-post { color: #7dd3fc; }
+.terminal .tok-key { color: #c4b5fd; }
+.terminal .tok-str { color: #fcd34d; }
+.win-tile-icon.green { background: rgba(15, 157, 107, 0.12); color: #0f7b4f; }
+.win-tile-icon.amber { background: rgba(247, 182, 75, 0.18); color: #b7791f; }
+[data-bs-theme='dark'] .win-tile-icon.green { color: #6ee7b7; }
+[data-bs-theme='dark'] .win-tile-icon.amber { color: #f7b64b; }
+code.inline { background: var(--win-selected); color: var(--win-accent); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85em; font-family: 'Cascadia Code', ui-monospace, Menlo, monospace; }
