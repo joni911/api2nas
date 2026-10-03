@@ -36,15 +36,15 @@
         <!-- Structured Data -->
         <script type="application/ld+json">
         {
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
+            "@@context": "https://schema.org",
+            "@@type": "WebApplication",
             "name": "API2NAS",
             "description": "Secure API Image Storage & Backup System",
             "url": "{{ url('/') }}",
             "applicationCategory": "StorageApplication",
             "operatingSystem": "Web",
             "offers": {
-                "@type": "Offer",
+                "@@type": "Offer",
                 "price": "0",
                 "priceCurrency": "USD"
             }

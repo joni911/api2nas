@@ -198,4 +198,20 @@ return [
 
     'same_site' => 'lax',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Session Serialization
+    |--------------------------------------------------------------------------
+    |
+    | This option controls how session data is serialized before being stored.
+    | The "json" option hardens sessions against PHP deserialization gadget
+    | chain attacks. This application does not store PHP objects in session,
+    | so JSON serialization is safe and recommended.
+    |
+    | Supported: "php", "json"
+    |
+    */
+
+    'serialization' => 'json',
+
 ];
