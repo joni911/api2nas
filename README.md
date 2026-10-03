@@ -50,6 +50,12 @@ Buat akun admin awal:
 php artisan db:seed
 ```
 
+Di server (produksi) tambahkan `--force`:
+
+```bash
+php artisan db:seed --force
+```
+
 Kredensial diambil dari `.env` (lihat `.env.example`):
 
 ```
@@ -71,16 +77,77 @@ tampil saat deploy tanpa Node.
 
 Jika mengubah SCSS/JS, jalankan `npm run build` lalu commit ulang folder `public/build`.
 
-## Instalasi
+## Instalasi (Development)
 
 1. Clone repository ini
 2. Jalankan `composer install`
-3. Salin `.env.example` ke `.env` dan sesuaikan konfigurasi
+3. Salin `.env.example` ke `.env` dan sesuaikan konfigurasi (default: **MySQL**)
 4. Jalankan `php artisan key:generate`
-5. Jalankan migrasi database: `php artisan migrate`
+5. Siapkan database MySQL (lihat bagian berikut), lalu `php artisan migrate --seed`
 6. Jalankan `npm install` dan `npm run build` untuk asset produksi (atau `npm run dev` saat development)
-8. (Opsional) Jalankan `php artisan db:seed` untuk membuat akun admin awal
-9. Login dengan `ADMIN_EMAIL` / `ADMIN_PASSWORD` dari `.env`
+7. Login dengan `ADMIN_EMAIL` / `ADMIN_PASSWORD` dari `.env`
+
+## Instalasi di Server (MySQL)
+
+### 1. Prasyarat
+- PHP >= 8.3 dengan ekstensi: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`,
+  `ctype`, `json`, `bcmath`, `fileinfo`, `gd`/`imagick`, `zip`
+- MySQL 8 / MariaDB 10.4+
+- Composer
+- Web server (Nginx/Apache) dengan **document root ke folder `public`**
+- Node.js (opsional — aset `public/build` sudah di-commit)
+
+### 2. Buat database & user
+```sql
+CREATE DATABASE api2nas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'api2nas'@'localhost' IDENTIFIED BY 'ganti_password_kuat';
+GRANT ALL PRIVILEGES ON api2nas.* TO 'api2nas'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### 3. Konfigurasi `.env`
+```
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://domain-anda.com
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=api2nas
+DB_USERNAME=api2nas
+DB_PASSWORD=ganti_password_kuat
+
+ADMIN_NAME=Administrator
+ADMIN_EMAIL=admin@domain-anda.com
+ADMIN_PASSWORD=password_kuat
+```
+
+> MySQL di mesin dev ini berjalan di port **3307** (`.env.example` memakai 3307).
+> Sesuaikan `DB_PORT` dengan server Anda (umumnya 3306).
+> Untuk memakai database lama `apiimg2nas`, set `DB_DATABASE=apiimg2nas`.
+
+### 4. Deploy
+```bash
+composer install --no-dev --optimize-autoloader
+php artisan key:generate
+php artisan migrate --force
+php artisan db:seed --force
+php artisan storage:link
+php artisan optimize   # cache config, route, view, event
+```
+
+### 5. Permission
+```bash
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+```
+
+### 6. Selesai
+Login dengan `ADMIN_EMAIL` / `ADMIN_PASSWORD`, lalu buat API key di menu **API Keys**.
+
+> `php artisan migrate --seed` aman dijalankan ulang: migrasi bersifat idempotent dan
+> `AdminUserSeeder` memakai `firstOrCreate` (tidak membuat admin duplikat).
 
 ## Penggunaan API
 
@@ -125,9 +192,14 @@ GET /api/data2nas/{id}
 - Gunakan rate limiting untuk mencegah abuse
 
 ## Manajemen File
-- File disimpan di direktori `storage/app/public/uploads/`
-- Gunakan struktur folder berdasarkan tanggal untuk organisasi
-- Pastikan direktori `storage/app/public` telah ditautkan ke `public/storage`
+- File disimpan di `storage/app/public/{nama_api}/{tahun}/{bulan}/`
+- URL publik: `{APP_URL}/storage/{path}`
+- Jalankan `php artisan storage:link` sekali setelah deploy
+
+## Testing
+- Test memakai **SQLite in-memory** (`phpunit.xml`) agar cepat & terisolasi,
+  terlepas dari koneksi MySQL aplikasi.
+- Jalankan: `composer test`
 
 ## Logging
 - Log semua permintaan API termasuk IP address

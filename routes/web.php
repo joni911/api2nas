@@ -17,9 +17,7 @@ use App\Http\Controllers\UserManagementController;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::view('/', 'welcome');
 
 // Health check endpoint
 Route::get('/health', [ApiController::class, 'health']);
